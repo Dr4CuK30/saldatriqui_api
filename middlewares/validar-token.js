@@ -13,6 +13,7 @@ const validarToken = (req = request, res = response, next) => {
 			req.header('tokenx'),
 			process.env.JWTSECRETKEY
 		);
+		req.body.userData = jwt.decode(req.header('tokenx'));
 		next();
 	} catch (e) {
 		res.status(401).json({

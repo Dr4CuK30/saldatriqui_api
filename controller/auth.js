@@ -33,10 +33,9 @@ const login = async (req = request, res = response) => {
 	}
 };
 
-const authToken = (req = request, res = response) => {
-	res.status(200).json({
-		msg: 'auth',
-	});
+const authToken = async (req = request, res = response) => {
+	const usuario = await Usuario.findById(req.body.userData.uid);
+	res.status(200).json({ usuariox: usuario.toJSON() });
 };
 
 const register = async (req = request, res = response) => {
