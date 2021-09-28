@@ -25,7 +25,7 @@ const socketController = (io) => {
 			);
 			socket.emit('hasJoined', { hasJoined });
 			if (hasJoined) {
-				io.to(roomId).emit({ start: true });
+				io.to(roomId).emit('start', { start: true });
 			} else {
 				socket.emit('hasJoined', { hasJoined });
 			}
