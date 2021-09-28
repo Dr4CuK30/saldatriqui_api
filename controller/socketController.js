@@ -4,7 +4,7 @@ const socketController = (io) => {
 	let espera = null;
 	io.on('connection', (socket) => {
 		socket.on('create', (payload) => {
-			const { playerId, playerName } = payload;
+			let { playerId, playerName } = payload;
 			playerId = playerId.split('.')[1];
 			const hasJoined = rooms.joinRoom(
 				socket,
@@ -15,7 +15,7 @@ const socketController = (io) => {
 			socket.emit('hasJoined', { hasJoined });
 		});
 		socket.on('join', (payload) => {
-			const { roomId, playerId, playerName } = payload;
+			let { roomId, playerId, playerName } = payload;
 			playerId = playerId.split('.')[1];
 			const hasJoined = rooms.joinRoom(
 				socket,
