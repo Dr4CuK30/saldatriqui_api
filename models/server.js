@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const dbConnection = require('../db/dbconfig');
+const { socketController } = require('../controller/socketController');
 
 class Server {
 	constructor() {
@@ -25,36 +26,7 @@ class Server {
 	}
 
 	sockets() {
-		let espera = null;
-		this.io.on('connection', (socket) => {
-			socket.on('search', (payload) => {
-				let roomId;
-				payload = payload.split('.')[1];
-				if (!espera) {
-					roomId = payload;
-					espera = payload;
-				} else {
-					roomId = espera;
-					espera = null;
-				}
-				socket.join(roomId);
-				if (espera == null) {
-					this.io
-						.to(roomId)
-						.emit('empezar', roomId);
-				}
-			});
-			socket.on('mover', (payload) => {
-				const { roomId, ...moveData } = payload;
-				socket.to(roomId).emit(
-					'cargarTablero',
-					moveData
-				);
-			});
-			socket.on('disconnect', () => {
-				console.log('desconectado');
-			});
-		});
+		socketController(this.io);
 	}
 
 	async dbConnect() {

@@ -1,5 +1,5 @@
 class Room {
-	constructor(roomId) {
+	constructor(roomId, host) {
 		this.players = [];
 		this.inGame = false;
 		this.isFull = false;
@@ -9,8 +9,9 @@ class Room {
 		if (this.players.length == 0 && this.inGame) return true;
 		return false;
 	}
-	join(playerId, playername) {
+	join(socket, playerId, playername) {
 		if (this.players.length < 2 && !this.inGame) {
+			socket.join(playerId);
 			if (this.players.length == 0) this.host = playername;
 			this.players.push(playerId);
 			if (this.players.length == 2) {
@@ -21,7 +22,7 @@ class Room {
 		}
 		return false;
 	}
-	leave(playerId) {
+	leave(playId) {
 		if (!this.players.includes(playerId)) return false;
 		const player_index = this.players.findIndex(
 			(pl) => pl == playerId
@@ -35,16 +36,17 @@ const Rooms = (function () {
 	var rooms = {};
 	return {
 		getRooms: () => rooms,
-		createRoom: (roomId) => {
-			const room = new Room(roomId);
-			rooms[roomId] = room;
-		},
-		joinRoom: (roomId, playerId) => {
-			if (rooms[roomId]) return rooms[roomId].join(playerId);
+		joinRoom: (socket, roomId, playerId, playerName) => {
+			if (rooms[roomId])
+				return rooms[roomId].join(socket, playerId);
 			else {
 				const room = new Room(roomId);
 				rooms[roomId] = room;
-				return rooms[roomId].join(playerId);
+				return rooms[roomId].join(
+					socket,
+					playerId,
+					playerName
+				);
 			}
 		},
 		leaveRoom: (roomId, playerId) => {
