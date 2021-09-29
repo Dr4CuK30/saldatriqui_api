@@ -3,16 +3,15 @@ class Room {
 		this.players = [];
 		this.inGame = false;
 		this.isFull = false;
-		this.host = null;
+		this.host = host;
 	}
 	get isUseless() {
 		if (this.players.length == 0 && this.inGame) return true;
 		return false;
 	}
-	join(socket, playerId, playername) {
+	join(socket, playerId, roomId) {
 		if (this.players.length < 2 && !this.inGame) {
-			socket.join(playerId);
-			if (this.players.length == 0) this.host = playername;
+			socket.join(roomId);
 			this.players.push(playerId);
 			if (this.players.length == 2) {
 				this.inGame = true;
@@ -22,7 +21,10 @@ class Room {
 		}
 		return false;
 	}
-	leave(playId) {
+	leave(socket, roomId, playerId) {
+		socket.leave(roomId);
+		console.log(this.players);
+		console.log(playerId);
 		if (!this.players.includes(playerId)) return false;
 		const player_index = this.players.findIndex(
 			(pl) => pl == playerId
@@ -38,19 +40,25 @@ const Rooms = (function () {
 		getRooms: () => rooms,
 		joinRoom: (socket, roomId, playerId, playerName) => {
 			if (rooms[roomId])
-				return rooms[roomId].join(socket, playerId);
+				return rooms[roomId].join(
+					socket,
+					playerId,
+					roomId
+				);
 			else {
-				const room = new Room(roomId);
+				const room = new Room(roomId, playerName);
 				rooms[roomId] = room;
 				return rooms[roomId].join(
 					socket,
 					playerId,
-					playerName
+					roomId
 				);
 			}
 		},
-		leaveRoom: (roomId, playerId) => {
-			rooms[roomId].leave(playerId);
+		leaveRoom: (socket, roomId, playerId) => {
+			console.log(
+				rooms[roomId].leave(socket, roomId, playerId)
+			);
 			if (rooms[roomId].isUseless) delete rooms[roomId];
 		},
 	};

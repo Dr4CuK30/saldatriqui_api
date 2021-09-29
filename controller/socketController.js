@@ -25,10 +25,20 @@ const socketController = (io) => {
 			);
 			socket.emit('hasJoined', { hasJoined });
 			if (hasJoined) {
-				io.to(roomId).emit('start', { start: true });
+				io.to(roomId).emit('start', {
+					start: true,
+					roomId,
+				});
 			} else {
 				socket.emit('hasJoined', { hasJoined });
 			}
+			console.log(rooms.getRooms());
+		});
+		socket.on('leave', (payload) => {
+			console.log(payload);
+			let { playerId, roomId } = payload;
+			playerId = playerId.split('.')[1];
+			rooms.leaveRoom(socket, roomId, playerId);
 		});
 		socket.on('mover', (payload) => {
 			const { roomId, ...moveData } = payload;
