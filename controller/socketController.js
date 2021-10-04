@@ -3,6 +3,11 @@ const rooms = require('../models/Rooms');
 const socketController = (io) => {
 	let espera = null;
 	io.on('connection', (socket) => {
+		socket.on('cargarData', (payload) => {
+			const { roomId } = payload;
+			socket.join(roomId);
+			socket.emit('cargarTablero', rooms.getRoomData(roomId));
+		});
 		socket.on('create', (payload) => {
 			let { playerId, playerName } = payload;
 			playerId = playerId.split('.')[1];
@@ -17,22 +22,15 @@ const socketController = (io) => {
 		socket.on('join', (payload) => {
 			let { roomId, playerId, playerName } = payload;
 			playerId = playerId.split('.')[1];
-			const hasJoined = rooms.joinRoom(
-				socket,
+			rooms.joinRoom(socket, roomId, playerId, playerName);
+			io.to(roomId).emit('start', {
+				start: true,
 				roomId,
-				playerId,
-				playerName
+			});
+			socket.to(roomId).emit(
+				'cargarTablero',
+				rooms.getRoomData(roomId)
 			);
-			socket.emit('hasJoined', { hasJoined });
-			if (hasJoined) {
-				io.to(roomId).emit('start', {
-					start: true,
-					roomId,
-				});
-			} else {
-				socket.emit('hasJoined', { hasJoined });
-			}
-			console.log(rooms.getRooms());
 		});
 		socket.on('leave', (payload) => {
 			console.log(payload);
@@ -41,11 +39,14 @@ const socketController = (io) => {
 			rooms.leaveRoom(socket, roomId, playerId);
 		});
 		socket.on('mover', (payload) => {
-			const { roomId, ...moveData } = payload;
-			socket.to(roomId).emit('cargarTablero', moveData);
-		});
-		socket.on('disconnect', () => {
-			console.log('desconectado');
+			const { roomId, f, c, player } = payload;
+			const gameData = rooms.moverCasilla(
+				roomId,
+				f,
+				c,
+				player
+			);
+			io.to(roomId).emit('cargarTablero', gameData);
 		});
 	});
 };
