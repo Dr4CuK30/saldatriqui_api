@@ -3,6 +3,7 @@ const { getEvento } = require('../utils/gameLogic');
 class Room {
 	constructor(host) {
 		this.players = [];
+		this.esperaReinicio = [];
 		this.inGame = false;
 		this.isFull = false;
 		this.host = host;
@@ -17,10 +18,10 @@ class Room {
 		if (this.players.length == 0) return true;
 		return false;
 	}
-	join(socket, playerId, roomId) {
+	join(socket, player, roomId) {
 		if (this.players.length < 2 && !this.inGame) {
 			socket.join(roomId);
-			this.players.push(playerId);
+			this.players.push(player);
 			if (this.players.length == 2) {
 				this.turno = 1;
 				this.inGame = true;
@@ -32,12 +33,17 @@ class Room {
 	}
 	leave(socket, roomId, playerId) {
 		socket.leave(roomId);
-		if (!this.players.includes(playerId)) return false;
 		const player_index = this.players.findIndex(
-			(pl) => pl == playerId
+			(pl) => pl.uid == playerId
 		);
 		this.players.splice(player_index, 1);
-		return true;
+	}
+	reiniciarTablero() {
+		this.gameTable = [
+			[0, 0, 0],
+			[0, 0, 0],
+			[0, 0, 0],
+		];
 	}
 }
 
@@ -45,19 +51,19 @@ const Rooms = (function () {
 	var rooms = {};
 	return {
 		getRooms: () => rooms,
-		joinRoom: (socket, roomId, playerId, playerName) => {
+		joinRoom: (socket, roomId, player) => {
 			if (rooms[roomId])
 				return rooms[roomId].join(
 					socket,
-					playerId,
+					player,
 					roomId
 				);
 			else {
-				const room = new Room(playerName);
+				const room = new Room(player.usuario);
 				rooms[roomId] = room;
 				return rooms[roomId].join(
 					socket,
-					playerId,
+					player,
 					roomId
 				);
 			}
@@ -93,6 +99,25 @@ const Rooms = (function () {
 				turno: room.turno,
 				evento,
 			};
+		},
+		reiniciarJuego: (io, roomId, playerId) => {
+			const room = rooms[roomId];
+			room.esperaReinicio.push(playerId);
+			if (room.esperaReinicio.length == 2) {
+				room.esperaReinicio = [];
+				const evento = getEvento(room.gameTable);
+				if (evento.ganadorData.winner == 1) {
+					room.turno = 2;
+				} else {
+					room.turno = 1;
+				}
+				room.reiniciarTablero();
+				io.to(roomId).emit('cargarTablero', {
+					tableroData: room.gameTable,
+					turno: room.turno,
+					evento: null,
+				});
+			}
 		},
 	};
 })();

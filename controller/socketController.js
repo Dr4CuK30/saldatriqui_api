@@ -9,20 +9,17 @@ const socketController = (io) => {
 			socket.emit('cargarTablero', rooms.getRoomData(roomId));
 		});
 		socket.on('create', (payload) => {
-			let { playerId, playerName } = payload;
+			let { playerId, player } = payload;
 			playerId = playerId.split('.')[1];
-			const hasJoined = rooms.joinRoom(
-				socket,
-				playerId,
-				playerId,
-				playerName
-			);
-			socket.emit('hasJoined', { hasJoined });
+			player.playerNum = 1;
+			player.puntuacion = 0;
+			rooms.joinRoom(socket, playerId, player);
 		});
 		socket.on('join', (payload) => {
-			let { roomId, playerId, playerName } = payload;
-			playerId = playerId.split('.')[1];
-			rooms.joinRoom(socket, roomId, playerId, playerName);
+			let { roomId, player } = payload;
+			player.playerNum = 1;
+			player.puntuacion = 0;
+			rooms.joinRoom(socket, roomId, player);
 			io.to(roomId).emit('start', {
 				start: true,
 				roomId,
@@ -47,6 +44,10 @@ const socketController = (io) => {
 				player
 			);
 			io.to(roomId).emit('cargarTablero', gameData);
+		});
+		socket.on('reiniciar', (payload) => {
+			const { roomId, playerId } = payload;
+			rooms.reiniciarJuego(io, roomId, playerId);
 		});
 	});
 };
