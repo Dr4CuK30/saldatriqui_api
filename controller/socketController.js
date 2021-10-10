@@ -7,6 +7,10 @@ const socketController = (io) => {
 			const { roomId } = payload;
 			socket.join(roomId);
 			socket.emit('cargarTablero', rooms.getRoomData(roomId));
+			socket.emit(
+				'loadPlayersData',
+				rooms.getPlayersData(roomId)
+			);
 		});
 		socket.on('create', (payload) => {
 			let { playerId, player } = payload;
@@ -17,7 +21,7 @@ const socketController = (io) => {
 		});
 		socket.on('join', (payload) => {
 			let { roomId, player } = payload;
-			player.playerNum = 1;
+			player.playerNum = 2;
 			player.puntuacion = 0;
 			rooms.joinRoom(socket, roomId, player);
 			io.to(roomId).emit('start', {
@@ -28,9 +32,12 @@ const socketController = (io) => {
 				'cargarTablero',
 				rooms.getRoomData(roomId)
 			);
+			socket.to(roomId).emit(
+				'loadPlayersData',
+				rooms.getPlayersData(roomId)
+			);
 		});
 		socket.on('leave', (payload) => {
-			console.log(payload);
 			let { playerId, roomId } = payload;
 			playerId = playerId.split('.')[1];
 			rooms.leaveRoom(socket, roomId, playerId);
@@ -43,6 +50,14 @@ const socketController = (io) => {
 				c,
 				player
 			);
+			if (
+				gameData.evento &&
+				gameData.evento.evento == 'hayGanador'
+			)
+				io.to(roomId).emit(
+					'loadPlayersData',
+					rooms.getPlayersData(roomId)
+				);
 			io.to(roomId).emit('cargarTablero', gameData);
 		});
 		socket.on('reiniciar', (payload) => {

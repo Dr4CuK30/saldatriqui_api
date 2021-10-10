@@ -45,6 +45,12 @@ class Room {
 			[0, 0, 0],
 		];
 	}
+	sumarPuntuacion(playerNum) {
+		const iplayer = this.players.findIndex(
+			(pl) => pl.playerNum == playerNum
+		);
+		this.players[iplayer].puntuacion += 1;
+	}
 }
 
 const Rooms = (function () {
@@ -69,17 +75,17 @@ const Rooms = (function () {
 			}
 		},
 		leaveRoom: (socket, roomId, playerId) => {
-			console.log(
-				rooms[roomId].leave(socket, roomId, playerId)
-			);
+			rooms[roomId].leave(socket, roomId, playerId);
 			if (rooms[roomId].isUseless) delete rooms[roomId];
 		},
 		moverCasilla: (roomId, f, c, pl) => {
 			const room = rooms[roomId];
 			room.gameTable[f][c] = pl;
 			const evento = getEvento(room.gameTable);
+			if (evento && evento.evento == 'hayGanador') {
+				room.sumarPuntuacion(evento.ganadorData.winner);
+			}
 			if (evento && evento.evento == 'empate') {
-				console.log('lol');
 				room.gameTable = room.gameTable.map((fila) => {
 					return fila.map((pos) => 0);
 				});
@@ -99,6 +105,10 @@ const Rooms = (function () {
 				turno: room.turno,
 				evento,
 			};
+		},
+		getPlayersData: (roomId) => {
+			const room = rooms[roomId];
+			return [...room.players];
 		},
 		reiniciarJuego: (io, roomId, playerId) => {
 			const room = rooms[roomId];
