@@ -39,7 +39,6 @@ const socketController = (io) => {
 		});
 		socket.on('leave', (payload) => {
 			let { playerId, roomId } = payload;
-			playerId = playerId.split('.')[1];
 			rooms.leaveRoom(socket, roomId, playerId);
 		});
 		socket.on('mover', (payload) => {
@@ -63,6 +62,14 @@ const socketController = (io) => {
 		socket.on('reiniciar', (payload) => {
 			const { roomId, playerId } = payload;
 			rooms.reiniciarJuego(io, roomId, playerId);
+		});
+		socket.on('enviarMensaje', (payload) => {
+			const { usuario, playerNum, content, roomId } = payload;
+			rooms.sendMessage(roomId, usuario, playerNum, content);
+			io.to(roomId).emit(
+				'loadPlayersData',
+				rooms.getPlayersData(roomId)
+			);
 		});
 	});
 };

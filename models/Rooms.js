@@ -1,7 +1,9 @@
 const { getEvento } = require('../utils/gameLogic');
+const Message = require('../models/Message');
 
 class Room {
 	constructor(host) {
+		this.chat = [];
 		this.players = [];
 		this.esperaReinicio = [];
 		this.inGame = false;
@@ -19,6 +21,13 @@ class Room {
 		return false;
 	}
 	join(socket, player, roomId) {
+		this.chat.push(
+			new Message(
+				null,
+				3,
+				`${player.usuario} ha ingresado a la sala`
+			)
+		);
 		if (this.players.length < 2 && !this.inGame) {
 			socket.join(roomId);
 			this.players.push(player);
@@ -32,10 +41,21 @@ class Room {
 		return false;
 	}
 	leave(socket, roomId, playerId) {
-		socket.leave(roomId);
 		const player_index = this.players.findIndex(
 			(pl) => pl.uid == playerId
 		);
+		this.chat.push(
+			new Message(
+				null,
+				3,
+				`${this.players[player_index].usuario} se ha retirado de la sala`
+			)
+		);
+		socket.to(roomId).emit('loadPlayersData', {
+			chat: [...this.chat],
+			players: [...this.players],
+		});
+		socket.leave(roomId);
 		this.players.splice(player_index, 1);
 	}
 	reiniciarTablero() {
@@ -50,6 +70,9 @@ class Room {
 			(pl) => pl.playerNum == playerNum
 		);
 		this.players[iplayer].puntuacion += 1;
+	}
+	saveMessage(message) {
+		this.chat.push(message);
 	}
 }
 
@@ -108,7 +131,10 @@ const Rooms = (function () {
 		},
 		getPlayersData: (roomId) => {
 			const room = rooms[roomId];
-			return [...room.players];
+			return {
+				players: [...room.players],
+				chat: [...room.chat],
+			};
 		},
 		reiniciarJuego: (io, roomId, playerId) => {
 			const room = rooms[roomId];
@@ -128,6 +154,15 @@ const Rooms = (function () {
 					evento: null,
 				});
 			}
+		},
+		sendMessage: (roomId, usuario, playerNum, content) => {
+			const room = rooms[roomId];
+			const message = new Message(
+				usuario,
+				playerNum,
+				content
+			);
+			room.saveMessage(message);
 		},
 	};
 })();
