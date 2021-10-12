@@ -1,6 +1,6 @@
 const { getEvento } = require('../utils/gameLogic');
 const Message = require('../models/Message');
-
+const { aumentarPuntaje } = require('../controller/users');
 class Room {
 	constructor(host) {
 		this.chat = [];
@@ -70,6 +70,7 @@ class Room {
 			(pl) => pl.playerNum == playerNum
 		);
 		this.players[iplayer].puntuacion += 1;
+		aumentarPuntaje(this.players[iplayer].uid);
 	}
 	saveMessage(message) {
 		this.chat.push(message);

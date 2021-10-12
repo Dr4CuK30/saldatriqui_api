@@ -23,6 +23,7 @@ class Server {
 	routes() {
 		this.app.use('/api/auth', require('../routes/auth'));
 		this.app.use('/api/rooms', require('../routes/rooms'));
+		this.app.use('/api/users', require('../routes/users'));
 	}
 
 	sockets() {
